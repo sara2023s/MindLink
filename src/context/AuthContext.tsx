@@ -5,16 +5,18 @@ import {
   onAuthStateChanged,
   createUserWithEmailAndPassword,
   updateProfile,
-  User as FirebaseUser
+  signInWithPopup,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
-import { User } from '../types';
+import { User } from '../types/index';
 
 interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name?: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -43,6 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
+          photoURL: user.photoURL,
           isAdmin: true, // For MVP, any authenticated user is an admin
         };
         setCurrentUser(userData);
@@ -74,12 +77,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     await firebaseSignOut(auth);
   };
 
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  };
+
   const value: AuthContextType = {
     currentUser,
     loading,
     signIn,
     signUp,
-    signOut
+    signOut,
+    signInWithGoogle,
   };
 
   return (

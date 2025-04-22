@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -8,10 +8,12 @@ import {
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
+import { Button } from '../components/ui/Button';
+import { toast } from 'react-hot-toast';
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { signUp } = useAuth();
+  const { signUp, currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -19,6 +21,12 @@ const Signup = () => {
     password: '',
     confirmPassword: ''
   });
+
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/dashboard');
+    }
+  }, [currentUser, navigate]);
 
   const [errors, setErrors] = useState({
     name: '',
@@ -114,6 +122,10 @@ const Signup = () => {
     }
   };
 
+  const handleGoogleSignUp = () => {
+    toast('Google sign-up is coming soon!', { icon: '🚧' });
+  };
+
   return (
     <div className="min-h-screen w-full">
       {/* Hero Section */}
@@ -149,11 +161,24 @@ const Signup = () => {
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <motion.form
             initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             onSubmit={handleSubmit}
             className="bg-white p-8 rounded-lg shadow-sm"
           >
+            <Button
+              type="button"
+              onClick={handleGoogleSignUp}
+              isLoading={isLoading}
+              fullWidth
+              variant="outline"
+              className="mb-4"
+            >
+              Sign up with Google
+            </Button>
+            <div className="text-center my-2">
+              <span className="text-gray-500">or</span>
+            </div>
             {errors.general && (
               <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
                 {errors.general}
@@ -245,7 +270,7 @@ const Signup = () => {
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>}
               </div>
 
-              <div className="flex items-center">
+              <div className="flex flex-wrap items-center">
                 <input
                   id="terms"
                   name="terms"
@@ -254,15 +279,21 @@ const Signup = () => {
                   required
                 />
                 <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
-                  I agree to the{' '}
-                  <Link to="/terms" className="font-medium text-indigo-600 hover:text-indigo-500">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="font-medium text-indigo-600 hover:text-indigo-500">
-                    Privacy Policy
-                  </Link>
+                  I agree to the
                 </label>
+                <Link
+                  to="/terms"
+                  className="ml-1 text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  Terms of Service
+                </Link>
+                <span className="mx-1 text-sm text-gray-700">and</span>
+                <Link
+                  to="/privacy"
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  Privacy Policy
+                </Link>
               </div>
 
               <button

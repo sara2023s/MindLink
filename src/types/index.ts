@@ -46,6 +46,7 @@ export type User = {
   email: string | null;
   displayName: string | null;
   isAdmin: boolean;
+  photoURL: string | null;
 };
 
 export interface Activity {

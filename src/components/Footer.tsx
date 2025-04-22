@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Plus, LogOut, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
@@ -101,24 +101,24 @@ const Footer: React.FC = () => {
             <h3 className="text-lg font-semibold text-neutral-900 mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="/" className="text-neutral-600 hover:text-indigo-600 transition-colors">
+                <Link to="/" className="text-neutral-600 hover:text-indigo-600 transition-colors">
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/features" className="text-neutral-600 hover:text-indigo-600 transition-colors">
+                <Link to="/features" className="text-neutral-600 hover:text-indigo-600 transition-colors">
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/about" className="text-neutral-600 hover:text-indigo-600 transition-colors">
+                <Link to="/about" className="text-neutral-600 hover:text-indigo-600 transition-colors">
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/contact" className="text-neutral-600 hover:text-indigo-600 transition-colors">
+                <Link to="/contact" className="text-neutral-600 hover:text-indigo-600 transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

@@ -108,9 +108,17 @@ export const Header: React.FC = () => {
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="flex items-center space-x-2 text-gray-600 hover:text-indigo-600 transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                      <User size={18} className="text-indigo-600" />
-                    </div>
+                    {currentUser.photoURL ? (
+                      <img
+                        src={currentUser.photoURL}
+                        alt={currentUser.displayName || 'User Avatar'}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
+                        <User size={18} className="text-indigo-600" />
+                      </div>
+                    )}
                     <span className="hidden md:inline text-sm font-medium">
                       {currentUser.displayName || currentUser.email?.split('@')[0]}
                     </span>

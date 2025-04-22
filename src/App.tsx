@@ -21,6 +21,8 @@ import ScrollToTop from './components/ScrollToTop';
 import Categories from './pages/Categories';
 import CategoryDetails from './pages/CategoryDetails';
 import CreateCategory from './pages/CreateCategory';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -53,6 +55,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/features" element={<Layout><Features /></Layout>} />
           <Route path="/about" element={<Layout><About /></Layout>} />
           <Route path="/contact" element={<Layout><Contact /></Layout>} />
+          <Route path="/terms" element={<Layout><Terms /></Layout>} />
+          <Route path="/privacy" element={<Layout><Privacy /></Layout>} />
           <Route
             path="/dashboard"
             element={

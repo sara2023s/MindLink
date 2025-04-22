@@ -6,6 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -35,14 +36,15 @@ export const Login: React.FC = () => {
     try {
       await signIn(email, password);
       navigate('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Login error:', err);
-      
-      if (err.code === 'auth/invalid-credential') {
+      // Type-guard the error code
+      const authError = err as { code?: string };
+      if (authError.code === 'auth/invalid-credential') {
         setError('Invalid email or password');
-      } else if (err.code === 'auth/user-not-found') {
+      } else if (authError.code === 'auth/user-not-found') {
         setError('No account found with this email');
-      } else if (err.code === 'auth/too-many-requests') {
+      } else if (authError.code === 'auth/too-many-requests') {
         setError('Too many failed login attempts. Please try again later');
       } else {
         setError('Failed to sign in. Please try again.');
@@ -50,6 +52,10 @@ export const Login: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleGoogleSignIn = () => {
+    toast('Google sign-in is coming soon!', { icon: '🚧' });
   };
 
   return (
@@ -102,6 +108,19 @@ export const Login: React.FC = () => {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-5">
+              <Button
+                type="button"
+                onClick={handleGoogleSignIn}
+                isLoading={isLoading}
+                fullWidth
+                variant="outline"
+                className="mb-4"
+              >
+                Sign in with Google
+              </Button>
+              <div className="text-center my-2">
+                <span className="text-gray-500">or</span>
+              </div>
               <div>
                 <Input
                   label="Email"
