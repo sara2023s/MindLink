@@ -79,7 +79,10 @@ const LandingPage: React.FC = () => {
                 Organize Your Mind,<br />One Link at a Time
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-violet-100 max-w-3xl mx-auto text-center">
-                MindLink is your intelligent link assistant — summarize, categorize, and search your saved content effortlessly using AI.
+                MindLink is your intelligent link assistant — summarize, categorize, and search your saved content effortlessly using AI. 
+              </p>
+              <p className="text-xl md:text-2xl mb-8 text-violet-100 max-w-3xl mx-auto text-center">
+                Currently in early access. More powerful features coming soon.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
@@ -218,7 +221,7 @@ const LandingPage: React.FC = () => {
               className="w-full text-white"
             >
               <h2 className="text-4xl font-bold mb-12">Why MindLink?</h2>
-              <ul className="space-y-6 text-lg text-center sm:text-left max-w-2xl mx-auto">
+              <ul className="space-y-6 text-lg text-center max-w-2xl mx-auto">
                 <li>Designed for speed and simplicity—add, organize, and revisit links effortlessly</li>
                 <li>Never lose a link again—everything stays organized and searchable</li>
                 <li>Optimized for all screens—seamless experience on desktop and mobile</li>

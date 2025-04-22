@@ -186,7 +186,7 @@ const About = () => {
             >
               MindLink doesn't just organize your links – it makes your digital content smarter. With AI-powered features like summarization, title generation, and smart categorization, MindLink helps you focus on the big picture, leaving the rest to AI. Whether it's for personal, academic, or professional use, MindLink is the best way to stay on top of your content.
             </motion.p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
               {[
                 "AI-powered link summaries",
                 "Customizable categories for better organization",

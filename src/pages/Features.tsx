@@ -16,24 +16,26 @@ const Features = () => {
       icon: SparklesIcon
     },
     {
-      title: 'Automatic Categorization',
-      description: 'Links are automatically categorized based on their content and context.',
-      icon: TagIcon
-    },
-    {
       title: 'Customizable Dashboard',
       description: 'Tailor your dashboard to show the information that matters most to you.',
       icon: AdjustmentsHorizontalIcon
     },
     {
+      title: 'Smart Tagging',
+      description: 'Automatic categorization with AI',
+      icon: TagIcon
+    },
+    {
       title: 'Link Expiration',
       description: 'Set expiration dates for your links to keep your collection fresh.',
-      icon: ClockIcon
+      icon: ClockIcon,
+      comingSoon: true
     },
     {
       title: 'Browser Extension',
       description: 'Save links directly from your browser with our convenient extension.',
-      icon: PuzzlePieceIcon
+      icon: PuzzlePieceIcon,
+      comingSoon: true
     }
   ];
 
@@ -107,7 +109,12 @@ const Features = () => {
                 className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
                 <feature.icon className="w-12 h-12 text-indigo-600 mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <div className="flex items-center mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900">{feature.title}</h3>
+                  {feature.comingSoon && (
+                    <span className="ml-2 px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-100 rounded-full">Coming Soon</span>
+                  )}
+                </div>
                 <p className="text-gray-600">{feature.description}</p>
               </motion.div>
             ))}
@@ -147,16 +154,16 @@ const Features = () => {
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Frequently Asked Questions</h2>
           <div className="max-w-3xl mx-auto space-y-6">
             <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Can I access my links offline?</h3>
-              <p className="text-gray-600">Yes, you can access your saved links offline through our browser extension.</p>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">How does the AI summarization work?</h3>
+              <p className="text-gray-600">MindLink uses advanced AI technology to generate instant summaries of your saved links, helping you quickly understand the content without needing to visit the page.</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">How do I delete a link?</h3>
-              <p className="text-gray-600">You can delete links directly from your dashboard or through the browser extension.</p>
+              <p className="text-gray-600">You can delete links directly from your dashboard.</p>
             </div>
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Can I collaborate with others?</h3>
-              <p className="text-gray-600">Yes, you can share your link collections with team members and collaborate in real-time.</p>
+              <p className="text-gray-600">At this stage, collaboration features are not available. However, it's something we're working on for future updates.</p>
             </div>
           </div>
         </div>
@@ -167,7 +174,7 @@ const Features = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-white mb-6">Ready to Transform Your Link Management?</h2>
-            <p className="text-xl text-indigo-100 mb-8">Join thousands of users who are already using MindLink to organize their digital life.</p>
+            <p className="text-xl text-indigo-100 mb-8">Starrt organizing your digital life with AI-powered summaries, automatic categorization, and more.</p>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
