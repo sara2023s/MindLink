@@ -1,21 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Link2, Plus, X, Loader2, Instagram } from 'lucide-react';
+import { Plus, X, Loader2, Instagram, ArrowLeft, Pin, ExternalLink } from 'lucide-react';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useLinks } from '../hooks/useLinks';
+import { useAuth } from '../contexts/AuthContext';
 import { instagramService } from '../services/instagramService';
-
-type SummarizationMode = 'quick' | 'detailed' | 'bullets';
+import { generateLinkContent } from '../services/aiService';
+import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { extractDomainFromUrl } from '../utils/urlUtils';
+import { Link } from '../types';
+import DeleteConfirmation from '../components/DeleteConfirmation';
 
 export const AddLink: React.FC = () => {
   const navigate = useNavigate();
   const { addLink } = useLinks();
+  const { currentUser } = useAuth();
+  
+  const [showMultiCatModal, setShowMultiCatModal] = useState(false);
   
   const [url, setUrl] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +32,13 @@ export const AddLink: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInstagram, setIsInstagram] = useState(false);
   const [isInstagramReelOrPost, setIsInstagramReelOrPost] = useState(false);
-  const [summarizationMode, setSummarizationMode] = useState<SummarizationMode>('quick');
+  const [isPinned, setIsPinned] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    title: string;
+    description: string;
+    category: string;
+    tags: string[];
+  } | null>(null);
 
   // Check if URL is Instagram and fetch metadata
   useEffect(() => {
@@ -37,7 +52,7 @@ export const AddLink: React.FC = () => {
           const contentType = instagramService.getContentType(url);
           const username = url.split('/')[3] || 'instagram';
           setTitle(instagramService.getDisplayTitle(username, contentType));
-          setTags(instagramService.getTags(contentType, username));
+          setTags(instagramService.getTags());
           setDescription('');
         } else {
           // For non-reel/post Instagram links, use regular metadata extraction
@@ -59,6 +74,30 @@ export const AddLink: React.FC = () => {
     checkInstagramUrl();
   }, [url]);
 
+  // Fetch metadata when URL changes
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      if (url && isValidUrl(url) && !isInstagram) {
+        setIsProcessing(true);
+        try {
+          const aiContent = await generateLinkContent(url);
+          setPreviewData(aiContent);
+          if (!title) setTitle(aiContent.title);
+          if (!description) setDescription(aiContent.description);
+          if (!category) setCategory(aiContent.category);
+          if (tags.length === 0) setTags(aiContent.tags);
+        } catch (error) {
+          console.error('Error fetching metadata:', error);
+          toast.error('Failed to generate content. Please try again.');
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    fetchMetadata();
+  }, [url]);
+
   const isValidUrl = (url: string): boolean => {
     try {
       new URL(url);
@@ -71,6 +110,11 @@ export const AddLink: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (category.includes(',')) {
+      setShowMultiCatModal(true);
+      return;
+    }
 
     if (!url) {
       setError('URL is required');
@@ -91,38 +135,41 @@ export const AddLink: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      await addLink({
-        url,
-        title: title || extractDomainFromUrl(url),
-        description,
-        tags,
-        category: isInstagramReelOrPost 
-          ? (instagramService.getContentType(url) === 'reel' ? 'Instagram Reel' : 'Instagram Post') 
-          : 'Uncategorized',
-        source: 'manual',
-        summarizationMode
-      });
+      // If any fields are empty, try to generate them with AI
+      if (!title || !description || !category || tags.length === 0) {
+        const aiContent = await generateLinkContent(url);
+        if (!title) setTitle(aiContent.title);
+        if (!description) setDescription(aiContent.description);
+        if (!category) setCategory(aiContent.category);
+        if (tags.length === 0) setTags(aiContent.tags);
+      }
 
-      // Show processing state for a moment before navigating
-      setTimeout(() => {
-        setIsProcessing(false);
-        navigate('/');
-      }, 1000);
+      const newLink: Omit<Link, 'id' | 'createdAt'> = {
+        url,
+        title: title || previewData?.title || extractDomainFromUrl(url),
+        description: description || previewData?.description || '',
+        category: category || previewData?.category || '',
+        tags,
+        isPinned,
+        isProcessed: false,
+        userId: currentUser?.uid || '',
+        isRead: false,
+        source: 'manual',
+        updatedAt: new Date(),
+        contentType: isInstagram ? 'reel' : 'link'
+      };
+
+      await addLink(newLink);
+
+      toast.success('Link added successfully!');
+      navigate('/dashboard');
     } catch (err) {
       setError('Failed to add link. Please try again.');
       console.error(err);
-      setIsProcessing(false);
+      toast.error('Failed to add link');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const extractDomainFromUrl = (url: string): string => {
-    try {
-      const hostname = new URL(url).hostname;
-      return hostname.replace(/^www\./, '');
-    } catch {
-      return url;
+      setIsProcessing(false);
     }
   };
 
@@ -145,166 +192,230 @@ export const AddLink: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-4">Add a New Link</h1>
-      <p className="text-gray-600 mb-6">
-        Save a new link to your collection. Our AI will automatically summarize and categorize it for you.
-      </p>
-
-      <Card>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <Input
-              label="URL *"
-              type="url"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              fullWidth
-              required
-            />
-            {isInstagram && (
-              <div className="mt-2 flex items-center text-blue-600">
-                <Instagram size={16} className="mr-1" />
-                <span className="text-sm">Instagram {instagramService.getContentType(url)?.toUpperCase()}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <Input
-              label="Title (optional)"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={isInstagramReelOrPost 
-                ? "Enter a title for this Instagram content"
-                : "Leave blank to auto-generate"}
-              fullWidth
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {isInstagramReelOrPost 
-                ? "Add a descriptive title for this Instagram content"
-                : "If left blank, a title will be generated from the URL"}
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description {isInstagramReelOrPost ? '*' : '(optional)'}
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={isInstagramReelOrPost 
-                ? "This is an Instagram link. Please describe the content or why you saved it:"
-                : "Leave blank for AI to generate a summary"}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-              rows={4}
-              required={isInstagramReelOrPost}
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              {isInstagramReelOrPost 
-                ? "Please describe what this content is about or why you saved it"
-                : "If left blank, AI will generate a summary of the content"}
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Summarization Mode
-            </label>
-            <select
-              value={summarizationMode}
-              onChange={(e) => setSummarizationMode(e.target.value as SummarizationMode)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
-            >
-              <option value="quick">Quick Summary (1-2 sentences)</option>
-              <option value="detailed">Detailed Summary (3-5 sentences)</option>
-              <option value="bullets">Bullet Points</option>
-            </select>
-            <p className="text-xs text-gray-500 mt-1">
-              Choose how you want the content to be summarized
-            </p>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tags (optional)
-            </label>
-            <div className="flex">
-              <Input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Add tags"
-                className="flex-grow"
-              />
-              <Button
-                type="button"
-                onClick={handleAddTag}
-                className="ml-2"
-                disabled={!tagInput.trim()}
+    <div className="min-h-screen bg-gray-50">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <Plus size={18} />
-              </Button>
+                <ArrowLeft className="w-5 h-5 text-gray-600" />
+              </button>
+              <h1 className="text-2xl font-semibold text-gray-900">Add a New Link</h1>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Press Enter or click + to add tags
-            </p>
-            
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-3">
-                {tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full flex items-center"
-                  >
-                    {tag}
-                    <button
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Form Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card>
+              <form onSubmit={handleSubmit}>
+                <div className="mb-6">
+                  <Input
+                    label="URL *"
+                    type="url"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    fullWidth
+                    required
+                  />
+                  {isInstagram && (
+                    <div className="mt-2 flex items-center text-blue-600">
+                      <Instagram size={16} className="mr-1" />
+                      <span className="text-sm">Instagram {instagramService.getContentType(url)?.toUpperCase()}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mb-6">
+                  <Input
+                    label="Title (optional)"
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder={isInstagramReelOrPost 
+                      ? "Enter a title for this Instagram content"
+                      : "Leave blank to auto-generate"}
+                    fullWidth
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description {isInstagramReelOrPost ? '*' : '(optional)'}
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder={isInstagramReelOrPost 
+                      ? "This is an Instagram link. Please describe the content or why you saved it:"
+                      : "Leave blank for AI to generate a summary"}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
+                    rows={4}
+                    required={isInstagramReelOrPost}
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tags (optional)
+                  </label>
+                  <div className="flex">
+                    <Input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Add tags"
+                      className="flex-grow"
+                    />
+                    <Button
                       type="button"
-                      onClick={() => removeTag(index)}
-                      className="ml-1 text-gray-500 hover:text-gray-700"
+                      onClick={handleAddTag}
+                      className="ml-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                      disabled={!tagInput.trim()}
                     >
-                      <X size={14} />
-                    </button>
+                      <Plus size={18} />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {tags.map((tag, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-sm bg-purple-100 text-purple-600"
+                      >
+                        {tag}
+                        <button
+                          type="button"
+                          onClick={() => removeTag(index)}
+                          className="ml-1 text-purple-600 hover:text-purple-700"
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center mb-6">
+                  <input
+                    type="checkbox"
+                    id="isPinned"
+                    checked={isPinned}
+                    onChange={(e) => setIsPinned(e.target.checked)}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isPinned" className="ml-2 block text-sm text-gray-700">
+                    Pin this link
+                  </label>
+                </div>
+
+                {error && (
+                  <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-md text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={() => navigate('/dashboard')}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isLoading || isProcessing}
+                    className="w-full sm:w-auto bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+                  >
+                    {isLoading || isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        {isProcessing ? 'Processing...' : 'Saving...'}
+                      </>
+                    ) : (
+                      'Save Link'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </motion.div>
+
+          {/* Preview Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="lg:sticky lg:top-24"
+          >
+            <Card>
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Preview</h2>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 line-clamp-2">
+                    {title || previewData?.title || 'Link Title'}
+                  </h3>
+                  {isPinned && (
+                    <Pin className="w-5 h-5 text-indigo-600" fill="currentColor" />
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 mb-4 line-clamp-3">
+                  {description || previewData?.description || 'Link description will appear here'}
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {(tags.length > 0 ? tags : previewData?.tags || []).map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-purple-100 text-purple-600 text-xs rounded-full"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                  <span className="text-xs text-gray-400">
+                    {new Date().toLocaleDateString()}
                   </span>
-                ))}
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-indigo-600 hover:text-indigo-700 flex items-center text-sm"
+                  >
+                    Visit Link
+                    <ExternalLink className="w-4 h-4 ml-1" />
+                  </a>
+                </div>
               </div>
-            )}
-          </div>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
 
-          {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
-
-          <div className="flex justify-end space-x-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/')}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              isLoading={isLoading}
-              icon={isLoading ? undefined : <Link2 size={18} />}
-            >
-              Save Link
-            </Button>
-          </div>
-
-          {isProcessing && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-md flex items-center space-x-2">
-              <Loader2 className="animate-spin text-blue-500" size={20} />
-              <span className="text-blue-700">
-                {isInstagram ? "Fetching Instagram metadata..." : "AI is processing your link..."}
-              </span>
-            </div>
-          )}
-        </form>
-      </Card>
+      {/* Delete Confirmation Modal for multi-cat restriction */}
+      <DeleteConfirmation
+        isOpen={showMultiCatModal}
+        onClose={() => setShowMultiCatModal(false)}
+        onConfirm={() => setShowMultiCatModal(false)}
+        title="Multi-Category Links Coming Soon"
+        message="Assigning a link to multiple categories isn't supported yet. For now, please pick just one category. This feature will be available in a future update!"
+        confirmText="Understood"
+        hideCancelButton={true}
+      />
     </div>
   );
 };

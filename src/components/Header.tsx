@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User, Sparkles, ArrowRight, Plus, Menu, X } from 'lucide-react';
+import { LogOut, User, ArrowRight, Plus, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -72,18 +72,14 @@ export const Header: React.FC = () => {
   );
 
   return (
-    <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100 sticky top-0 z-50">
+    <header className="fixed inset-x-0 top-0 bg-white/80 backdrop-blur-sm border-b border-gray-100 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex-shrink-0">
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="relative">
-                <Sparkles className="w-6 h-6 text-indigo-600 group-hover:text-indigo-700 transition-colors duration-200" />
-                <div className="absolute -inset-1 bg-indigo-100 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 blur-sm"></div>
-              </div>
               <span className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                AI Link Organizer
+                MindLink
               </span>
             </Link>
           </div>
@@ -101,7 +97,7 @@ export const Header: React.FC = () => {
                   variant="primary"
                   size="sm"
                   className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                  onClick={() => navigate('/add-link')}
+                  onClick={() => navigate('/add')}
                 >
                   <Plus size={18} />
                   <span>New Link</span>
@@ -183,7 +179,7 @@ export const Header: React.FC = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden py-4"
+              className="md:hidden w-full py-4 bg-white shadow-md"
             >
               <nav className="flex flex-col space-y-2">
                 {currentUser ? (
@@ -192,7 +188,7 @@ export const Header: React.FC = () => {
                       <Link
                         key={item.path}
                         to={item.path}
-                        className={`px-4 py-2 text-sm font-medium rounded-md ${
+                        className={`w-full text-left px-4 py-2 text-sm font-medium rounded-md ${
                           isActive(item.path)
                             ? 'text-indigo-600 bg-indigo-50'
                             : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
@@ -204,17 +200,17 @@ export const Header: React.FC = () => {
                     ))}
                     <button
                       onClick={() => {
-                        navigate('/add-link');
+                        navigate('/add');
                         setIsMenuOpen(false);
                       }}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-md"
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-md"
                     >
                       <Plus size={18} />
                       <span>New Link</span>
                     </button>
                     <button
                       onClick={handleSignOut}
-                      className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600"
+                      className="w-full flex items-center justify-center space-x-2 px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600"
                     >
                       <LogOut size={18} />
                       <span>Sign Out</span>
@@ -226,7 +222,7 @@ export const Header: React.FC = () => {
                       <Link
                         key={item.path}
                         to={item.path}
-                        className={`px-4 py-2 text-sm font-medium rounded-md ${
+                        className={`w-full text-left px-4 py-2 text-sm font-medium rounded-md ${
                           isActive(item.path)
                             ? 'text-indigo-600 bg-indigo-50'
                             : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
@@ -236,20 +232,6 @@ export const Header: React.FC = () => {
                         {item.label}
                       </Link>
                     ))}
-                    <Link
-                      to="/login"
-                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-indigo-600"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Sign In
-                    </Link>
-                    <Link
-                      to="/signup"
-                      className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 rounded-md"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Get Started
-                    </Link>
                   </>
                 )}
               </nav>

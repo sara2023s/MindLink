@@ -12,7 +12,15 @@ import Layout from './components/Layout';
 import Features from './pages/Features';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import PinnedLinks from './pages/PinnedLinks';
+import AllLinks from './pages/AllLinks';
+import SavedLinks from './pages/SavedLinks';
+import ComingSoon from './pages/ComingSoon';
 import { Toaster } from 'react-hot-toast';
+import ScrollToTop from './components/ScrollToTop';
+import Categories from './pages/Categories';
+import CategoryDetails from './pages/CategoryDetails';
+import CreateCategory from './pages/CreateCategory';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -35,10 +43,11 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 const AppRoutes: React.FC = () => {
   return (
     <Router>
+      <ScrollToTop />
       <AuthProvider>
         <Toaster position="top-right" />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
+          <Route path="/" element={<Layout><LandingPage /></Layout>} />
           <Route path="/login" element={<Layout><Login /></Layout>} />
           <Route path="/signup" element={<Layout><SignUp /></Layout>} />
           <Route path="/features" element={<Layout><Features /></Layout>} />
@@ -65,6 +74,70 @@ const AppRoutes: React.FC = () => {
             element={
               <ProtectedRoute>
                 <LinkDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pinned"
+            element={
+              <ProtectedRoute>
+                <PinnedLinks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/all"
+            element={
+              <ProtectedRoute>
+                <AllLinks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved"
+            element={
+              <ProtectedRoute>
+                <SavedLinks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/coming-soon"
+            element={
+              <ProtectedRoute>
+                <ComingSoon />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute>
+                <Categories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/category/:categoryId"
+            element={
+              <ProtectedRoute>
+                <CategoryDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/category/:categoryId/edit"
+            element={
+              <ProtectedRoute>
+                <CategoryDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-category"
+            element={
+              <ProtectedRoute>
+                <CreateCategory />
               </ProtectedRoute>
             }
           />

@@ -100,15 +100,17 @@ export const useLinks = () => {
           title: data.title as string,
           description: data.description as string,
           category: data.category as string,
-          tags: data.tags as string[] || [],
+          tags: (data.tags as string[]) || [],
           createdAt: data.createdAt?.toDate() ?? new Date(),
+          updatedAt: data.updatedAt?.toDate() ?? new Date(),
           imageUrl: data.imageUrl as string,
           isProcessed: data.isProcessed as boolean,
-          isPinned: data.isPinned as boolean || false,
+          isPinned: (data.isPinned as boolean) || false,
           source: data.source as 'manual' | 'import',
           contentType: data.contentType as 'link' | 'reel' | 'post',
           userId: data.userId as string,
-          isRead: data.isRead as boolean ?? false
+          isRead: (data.isRead as boolean) ?? false,
+          isDeleted: (data.isDeleted as boolean) ?? (data.deleted as boolean) ?? false
         };
       });
       

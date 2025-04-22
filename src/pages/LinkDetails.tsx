@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useLinks } from '../hooks/useLinks';
 import { Link } from '../types';
-import { ArrowLeft, ExternalLink, Edit2, Save, X, Globe, FileText, Tag, Folder } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Edit2, Pin, Trash2, Clock, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import DeleteConfirmation from '../components/DeleteConfirmation';
 
 const LinkDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { updateLink } = useLinks();
+  const { links, updateLink, deleteLink } = useLinks();
   const [link, setLink] = useState<Link | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedLink, setEditedLink] = useState<Partial<Link>>({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLastCategoryModal, setShowLastCategoryModal] = useState(false);
 
   useEffect(() => {
     const fetchLink = async () => {
@@ -48,12 +52,52 @@ const LinkDetails = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!id || !link) return;
+    const categoryName = link.category;
+    if (categoryName) {
+      const otherLinks = links.filter(l => l.category === categoryName && l.id !== id && !l.isDeleted);
+      if (otherLinks.length === 0) {
+        setShowLastCategoryModal(true);
+        return;
+      }
+    }
+    try {
+      await deleteLink(id);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error deleting link:', error);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteLink(id);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error deleting link:', error);
+    } finally {
+      setShowLastCategoryModal(false);
+    }
+  };
+
   const handleTagChange = (tags: string[]) => {
     setEditedLink(prev => ({ ...prev, tags }));
   };
 
   const handleCategoryChange = (category: string) => {
     setEditedLink(prev => ({ ...prev, category }));
+  };
+
+  const togglePin = async () => {
+    if (!link || !id) return;
+    try {
+      await updateLink(id, { isPinned: !link.isPinned });
+      setLink({ ...link, isPinned: !link.isPinned });
+    } catch (error) {
+      console.error('Error toggling pin:', error);
+    }
   };
 
   if (!link) {
@@ -91,17 +135,28 @@ const LinkDetails = () => {
     }
   };
 
-  const buttonVariants = {
-    hover: {
-      scale: 1.05,
-      boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-      transition: {
-        type: "spring",
-        stiffness: 300
+  const getDomain = (url: string) => {
+    try {
+      const domain = new URL(url).hostname;
+      return domain.startsWith('www.') ? domain.substring(4) : domain;
+    } catch {
+      return url;
+    }
+  };
+
+  const getFormattedDate = (date: Date | { toDate: () => Date } | string) => {
+    try {
+      if (date instanceof Date) {
+        return format(date, 'MMM d, yyyy');
+      } else if (typeof date === 'object' && 'toDate' in date) {
+        return format(date.toDate(), 'MMM d, yyyy');
+      } else if (typeof date === 'string') {
+        return format(new Date(date), 'MMM d, yyyy');
       }
-    },
-    tap: {
-      scale: 0.95
+      return 'Unknown date';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
     }
   };
 
@@ -109,8 +164,8 @@ const LinkDetails = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen py-12"
+      exit={{ opacity: 0 }}
+      className="max-w-4xl mx-auto px-4 py-8"
     >
       {/* Animated blob background */}
       <div className="absolute inset-0 overflow-hidden">
@@ -135,15 +190,36 @@ const LinkDetails = () => {
             <ArrowLeft size={20} className="mr-2" />
             Back to Dashboard
           </motion.button>
-          <motion.h1 
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
-          >
-            Link Details
-          </motion.h1>
-          <div className="w-24" />
+          <div className="flex space-x-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={togglePin}
+              className={`p-1 rounded-full transition-colors ${
+                link.isPinned 
+                  ? 'text-indigo-600' 
+                  : 'text-gray-400 hover:text-indigo-600'
+              }`}
+            >
+              <Pin className="w-5 h-5" fill={link.isPinned ? "currentColor" : "none"} />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsEditing(!isEditing)}
+              className="p-1 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
+              <Edit2 className="w-5 h-5" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowDeleteModal(true)}
+              className="p-1 rounded-full text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-5 h-5" />
+            </motion.button>
+          </div>
         </motion.div>
 
         <motion.div 
@@ -152,12 +228,30 @@ const LinkDetails = () => {
           animate="visible"
           className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 space-y-8 border border-gray-100"
         >
+          {/* Title Section */}
+          <motion.div variants={itemVariants} className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <img 
+                src={`https://www.google.com/s2/favicons?domain=${link.url}`} 
+                alt="favicon" 
+                className="w-8 h-8"
+              />
+              <h1 className="text-3xl font-bold text-gray-900">{link.title}</h1>
+            </div>
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              <div className="flex items-center">
+                <Clock size={16} className="mr-1" />
+                {getFormattedDate(link.createdAt)}
+              </div>
+              <div className="flex items-center">
+                <Globe size={16} className="mr-1" />
+                {getDomain(link.url)}
+              </div>
+            </div>
+          </motion.div>
+
           {/* URL Section */}
           <motion.div variants={itemVariants} className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Globe className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">URL</h2>
-            </div>
             <a
               href={link.url}
               target="_blank"
@@ -169,48 +263,17 @@ const LinkDetails = () => {
             </a>
           </motion.div>
 
-          {/* Title Section */}
+          {/* AI Summary Section */}
           <motion.div variants={itemVariants} className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Title</h2>
-            </div>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedLink.title || ''}
-                onChange={(e) => setEditedLink(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            ) : (
-              <p className="text-lg text-gray-900">{link.title}</p>
-            )}
-          </motion.div>
-
-          {/* Description Section */}
-          <motion.div variants={itemVariants} className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <FileText className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Description</h2>
-            </div>
-            {isEditing ? (
-              <textarea
-                value={editedLink.description || ''}
-                onChange={(e) => setEditedLink(prev => ({ ...prev, description: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                rows={4}
-              />
-            ) : (
+            <h2 className="text-xl font-semibold text-gray-900">AI Summary</h2>
+            <div className="bg-gray-50 rounded-lg p-4 max-h-60 overflow-y-auto">
               <p className="text-gray-700 whitespace-pre-wrap">{link.description}</p>
-            )}
+            </div>
           </motion.div>
 
           {/* Category Section */}
           <motion.div variants={itemVariants} className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Folder className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Category</h2>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Category</h2>
             {isEditing ? (
               <input
                 type="text"
@@ -219,16 +282,15 @@ const LinkDetails = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               />
             ) : (
-              <p className="text-gray-900">{link.category}</p>
+              <span className="inline-block bg-indigo-100 text-indigo-800 px-4 py-2 rounded-full">
+                {link.category}
+              </span>
             )}
           </motion.div>
 
           {/* Tags Section */}
           <motion.div variants={itemVariants} className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Tag className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Tags</h2>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Tags</h2>
             {isEditing ? (
               <div className="flex flex-wrap gap-2">
                 <AnimatePresence>
@@ -253,81 +315,83 @@ const LinkDetails = () => {
                 </AnimatePresence>
                 <input
                   type="text"
-                  placeholder="Add new tag"
+                  placeholder="Add tag..."
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value) {
-                      handleTagChange([...(editedLink.tags || []), e.currentTarget.value]);
+                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                      handleTagChange([...(editedLink.tags || []), e.currentTarget.value.trim()]);
                       e.currentTarget.value = '';
                     }
                   }}
-                  className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="px-3 py-1 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <AnimatePresence>
-                  {link.tags?.map((tag) => (
-                    <motion.span
-                      key={tag}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      whileHover={{ scale: 1.05 }}
-                      className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full shadow-sm hover:shadow-md transition-shadow"
-                    >
-                      {tag}
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
+                {link.tags?.map((tag) => (
+                  <motion.span
+                    key={tag}
+                    whileHover={{ scale: 1.05 }}
+                    className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    {tag}
+                  </motion.span>
+                ))}
               </div>
             )}
           </motion.div>
 
-          {/* Action Buttons */}
-          <motion.div 
-            variants={itemVariants}
-            className="flex justify-end gap-4 pt-6 border-t border-gray-200"
-          >
-            {isEditing ? (
-              <>
-                <motion.button
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  onClick={() => {
-                    setEditedLink(link);
-                    setIsEditing(false);
-                  }}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  <X size={20} className="inline-block mr-2" />
-                  Cancel
-                </motion.button>
-                <motion.button
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                  onClick={handleSave}
-                  className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-                >
-                  <Save size={20} className="inline-block mr-2" />
-                  Save Changes
-                </motion.button>
-              </>
-            ) : (
-              <motion.button
-                variants={buttonVariants}
-                whileHover="hover"
-                whileTap="tap"
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center"
-              >
-                <Edit2 size={20} className="inline-block mr-2" />
-                Edit
-              </motion.button>
-            )}
+          {/* Related Links Section (Placeholder) */}
+          <motion.div variants={itemVariants} className="space-y-3">
+            <h2 className="text-xl font-semibold text-gray-900">Related Links</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-gray-500 italic">Related links feature coming soon...</p>
+              </div>
+            </div>
           </motion.div>
+
+          {isEditing && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex justify-end space-x-4 mt-8"
+            >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsEditing(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleSave}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                Save Changes
+              </motion.button>
+            </motion.div>
+          )}
         </motion.div>
       </div>
+
+      <DeleteConfirmation
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDelete}
+      />
+      {/* Last-Link-in-Category Deletion Confirmation */}
+      <DeleteConfirmation
+        isOpen={showLastCategoryModal}
+        onClose={() => setShowLastCategoryModal(false)}
+        onConfirm={confirmDelete}
+        title="This Will Delete the Category"
+        message={`Removing this link will also delete the category ${link?.category} because it won't contain any more links. Are you sure you want to continue?`}
+        confirmText="Yes, Remove & Delete"
+        cancelText="Cancel"
+      />
     </motion.div>
   );
 };

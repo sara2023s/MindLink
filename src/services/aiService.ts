@@ -25,6 +25,13 @@ interface AIResponse {
   categories: string[];
 }
 
+interface AIContentResponse {
+  title: string;
+  description: string;
+  category: string;
+  tags: string[];
+}
+
 export const aiService = {
   async generateContent(url: string, content: string, mode: 'quick' | 'detailed' | 'bullets' = 'quick'): Promise<AIResponse> {
     try {
@@ -89,7 +96,7 @@ export const aiService = {
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': window.location.origin,
-            'X-Title': 'LinkMind'
+            'X-Title': 'MindLink'
           }
         }
       );
@@ -158,7 +165,7 @@ export const aiService = {
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
             'Content-Type': 'application/json',
             'HTTP-Referer': window.location.origin,
-            'X-Title': 'LinkMind'
+            'X-Title': 'MindLink'
           }
         }
       );
@@ -184,7 +191,7 @@ export class AIService {
     return AIService.instance;
   }
 
-  private async callOpenRouter(
+  public async callOpenRouter(
     messages: OpenRouterMessage[], 
     responseFormat: OpenRouterResponseFormat = { type: "json_object" },
     maxRetries = 3
@@ -203,8 +210,8 @@ export class AIService {
         console.log('OpenRouter API Request:', {
           model: 'meta-llama/llama-2-70b-chat',
           messages,
-          temperature: 0.3,
-          max_tokens: 2000,
+          temperature: 0.5,
+          max_tokens: 4000,
           response_format: responseFormat
         });
 
@@ -213,17 +220,17 @@ export class AIService {
           {
             model: 'meta-llama/llama-2-70b-chat',
             messages,
-            temperature: 0.3,
-            max_tokens: 2000,
+            temperature: 0.5,
+            max_tokens: 4000,
             response_format: responseFormat,
-            stop: ['```', '"""', 'You are an', '<|im_end|>', '<|im_start|>', '<|end|>', '<|start|>'] // Stop at common non-JSON patterns
+            stop: ['```', '"""', 'You are an', '<|im_end|>', '<|im_start|>', '<|end|>', '<|start|>', 'Note:', 'Here is', 'The response'] // Stop at common non-JSON patterns
           },
           {
             headers: {
               'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
               'Content-Type': 'application/json',
               'HTTP-Referer': window.location.origin,
-              'X-Title': 'LinkMind'
+              'X-Title': 'MindLink'
             }
           }
         );
@@ -279,4 +286,45 @@ export class AIService {
       throw new Error('Failed to analyze content');
     }
   }
-} 
+}
+
+export const generateLinkContent = async (url: string): Promise<AIContentResponse> => {
+  try {
+    const systemContent = `You are a helpful AI assistant that generates content for saved links. Analyze the URL and return ONLY a valid, complete JSON object with exactly these keys in this order: "title", "description", "category", "tags". 
+
+For the category field:
+1. Generate a specific, meaningful category based on the content type and topic
+2. Do NOT use generic categories like "Uncategorized" or "General"
+3. Examples of good categories: "Technology", "Science", "Business", "Education", "Entertainment", "Health", "Sports", "News", "Tutorials", "Productivity"
+4. The category should be a single word or short phrase that accurately represents the main topic
+
+For the tags field:
+1. Generate 3-5 relevant tags that describe specific aspects of the content
+2. Tags should be more specific than the category
+3. Use lowercase and separate words with hyphens if needed
+
+Do NOT include any additional text or code blocks.`;
+    const userContent = `Please analyze this URL and generate appropriate content: ${url}`;
+    const messages: OpenRouterMessage[] = [
+      { role: 'system', content: systemContent },
+      { role: 'user', content: userContent }
+    ];
+    const result = await AIService.getInstance().callOpenRouter(messages);
+    let aiResponse: AIContentResponse;
+    try {
+      aiResponse = JSON.parse(result);
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      console.error('Raw content:', result);
+      throw new Error('Failed to parse AI response');
+    }
+    if (!aiResponse.title || !aiResponse.description || !aiResponse.category || !Array.isArray(aiResponse.tags)) {
+      console.error('Invalid AI response format:', aiResponse);
+      throw new Error('Invalid AI response format');
+    }
+    return aiResponse;
+  } catch (error) {
+    console.error('Error generating content:', error);
+    throw new Error('Failed to generate content. Please try again.');
+  }
+};

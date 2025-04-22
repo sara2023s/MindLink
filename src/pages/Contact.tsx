@@ -146,7 +146,7 @@ const Contact = () => {
               <p className="text-gray-600 mb-6">Your message has been sent successfully. I'll get back to you soon!</p>
               <button
                 onClick={() => setIsSubmitted(false)}
-                className="inline-flex items-center space-x-2 bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 <PaperAirplaneIcon className="w-5 h-5" />
                 <span>Send Another Message</span>
@@ -213,13 +213,15 @@ const Contact = () => {
                   Your privacy is important to me. All information submitted will be kept confidential.
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full inline-flex items-center justify-center space-x-2 bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-                >
-                  <PaperAirplaneIcon className="w-5 h-5" />
-                  <span>Send Message</span>
-                </button>
+                <div className="flex justify-center sm:justify-start">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                  >
+                    <PaperAirplaneIcon className="w-5 h-5" />
+                    <span>Send Message</span>
+                  </button>
+                </div>
               </div>
             </motion.form>
           )}
@@ -261,7 +263,7 @@ const Contact = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.6 }}
-              className="inline-flex items-center space-x-2 bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+              className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <GlobeAltIcon className="w-5 h-5" />
               <span>Visit My Portfolio</span>

@@ -1,3 +1,9 @@
+export enum SummarizationMode {
+  BULLET_POINTS = 'BULLET_POINTS',
+  PARAGRAPH = 'PARAGRAPH',
+  KEY_POINTS = 'KEY_POINTS',
+}
+
 export interface Link {
   id: string;
   url: string;
@@ -6,21 +12,19 @@ export interface Link {
   category: string;
   tags: string[];
   createdAt: Date;
+  updatedAt: Date;
+  summary?: string;
+  summaryMode?: SummarizationMode;
+  isArchived?: boolean;
+  isFavorite?: boolean;
+  notes?: string;
+  previewImage?: string;
   imageUrl?: string | null;
   isProcessed: boolean;
   isPinned: boolean;
   source: 'manual' | 'import';
   contentType?: 'link' | 'reel' | 'post';
   userId: string;
-  summarizationMode?: 'quick' | 'detailed' | 'bullets';
-  metadata?: {
-    title: string;
-    description: string;
-    thumbnail_url: string;
-    author_name: string;
-    author_url: string;
-    type: 'video' | 'rich';
-  } | null;
   aiSummary?: string;
   aiConfidence?: number;
   reminderDate?: Date;
@@ -57,4 +61,15 @@ export interface Activity {
     oldValue?: string;
     newValue?: string;
   };
+}
+
+export interface LinkFormData {
+  url: string;
+  title: string;
+  description: string;
+  category: string;
+  summary?: string;
+  summaryMode?: SummarizationMode;
+  tags?: string[];
+  notes?: string;
 }

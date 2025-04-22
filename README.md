@@ -1,39 +1,54 @@
-# AI Link Organizer
+# MindLink
 
-A modern web application that helps users organize, categorize, and enhance their saved links with AI-powered features.
+MindLink is your intelligent link organizer — summarize, categorize, and search your saved links effortlessly using AI.
 
-## 🌟 Features
+## 🏠 Homepage Sections
 
-### 🔗 Link Management
-- **Smart Link Saving**: Save links with automatic metadata extraction
-- **AI-Powered Content Analysis**: Get AI-generated summaries and tags
-- **Custom Categories**: Organize links into categories (Articles, Videos, Social, Documentation, Tools)
-- **Tag System**: Add and manage custom tags for better organization
-- **Search & Filter**: Find links quickly with search and category filters
-- **Bulk Actions**: Delete multiple links at once
+- Hero Section with prominent call-to-action
+- Problem/Solution overview
+- Core Features showcase
+- How It Works step-by-step guide
+- Why MindLink professional benefits list
+- Testimonials carousel
+- About Creator profile
+- Final Call-to-Action
 
-### 🎨 Modern UI/UX
-- **Responsive Design**: Works seamlessly on desktop and mobile
-- **Dark Mode**: Eye-friendly dark theme option
-- **Modern Animations**: Smooth transitions and hover effects
-- **Clean Interface**: Intuitive and user-friendly layout
-- **Loading States**: Visual feedback during operations
+## 🔗 Link Management
 
-### 🔒 Authentication & Security
-- **Firebase Authentication**: Secure user authentication
-- **User-Specific Data**: Each user's links are private and secure
-- **Protected Routes**: Secure access to user data
+- Smart Link Saving with automatic metadata extraction
+- AI-Powered Content Analysis: automatic title, summary, category, and tag generation
+- Custom Categories: create, view, edit, and delete categories (with last-category deletion confirmation)
+- Tag System: add, edit, and remove tags
+- Pin/Unpin links for quick access
+- Link Editing: inline editing of link details and AI reprocessing
+- Detail View: comprehensive link details with AI summary and original URL
 
-### 🤖 AI Integration
-- **Content Analysis**: AI-powered link content analysis
-- **Smart Summaries**: Automatic content summarization
-- **Tag Generation**: AI-suggested tags based on content
-- **Platform-Specific Handling**: Special handling for platforms like Instagram
+## 📋 Dashboard & Navigation
 
-### 📱 Platform Support
-- **Instagram Integration**: Special handling for Instagram links
-- **Universal Support**: Works with any web link
-- **Metadata Extraction**: Automatic extraction of link metadata
+- Protected Dashboard with all user links
+- Views for Pinned, All, and Saved links
+- Responsive layout and modern animations (Framer Motion)
+- Toast notifications (react-hot-toast)
+- Scroll-to-top behavior on route change
+
+## 👥 Authentication & Security
+
+- Firebase Email/Password Authentication
+- User-Specific Data in Firestore
+- Protected Routes for data security
+
+## 📂 Category Management
+
+- List all categories
+- Category detail and edit page
+- Create and delete custom categories
+- Last-category deletion confirmation prompt
+
+## 🤖 AI Integration
+
+- AI Service using OpenRouter for content generation
+- Customizable prompts for title, summary, categories, and tags
+- Expand and improve content with AI
 
 ## 🚀 Getting Started
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Search, Lock, LayoutDashboard, Tag, Brain } from 'lucide-react';
+import { Search, Lock, LayoutDashboard, Tag, Brain } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const LandingPage: React.FC = () => {
@@ -64,49 +64,6 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen w-full min-w-full">
-      {/* Navbar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-violet-700">
-                MindLink
-              </Link>
-            </div>
-            <div className="hidden md:block">
-              <div className="flex items-center space-x-8">
-                <Link to="/" className="text-gray-600 hover:text-violet-700 px-3 py-2 rounded-md text-sm font-medium">
-                  Home
-                </Link>
-                <Link to="/features" className="text-gray-600 hover:text-violet-700 px-3 py-2 rounded-md text-sm font-medium">
-                  Features
-                </Link>
-                <Link to="/about" className="text-gray-600 hover:text-violet-700 px-3 py-2 rounded-md text-sm font-medium">
-                  About
-                </Link>
-                <Link to="/contact" className="text-gray-600 hover:text-violet-700 px-3 py-2 rounded-md text-sm font-medium">
-                  Contact
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/login"
-                className="bg-violet-700 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-violet-800"
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="border border-violet-700 text-violet-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-violet-50"
-              >
-                Sign Up
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="relative min-h-screen w-full min-w-full bg-gradient-to-br from-violet-900 via-violet-800 to-violet-700">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
@@ -124,7 +81,7 @@ const LandingPage: React.FC = () => {
               <p className="text-xl md:text-2xl mb-8 text-violet-100 max-w-3xl mx-auto text-center">
                 MindLink is your intelligent link assistant — summarize, categorize, and search your saved content effortlessly using AI.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="flex flex-wrap justify-center gap-4">
                 <Link
                   to="/signup"
                   className="bg-white text-violet-700 px-8 py-4 rounded-xl font-semibold hover:bg-violet-50 transition-all duration-300 transform hover:scale-105 shadow-lg w-fit"
@@ -139,7 +96,7 @@ const LandingPage: React.FC = () => {
                 </Link>
               </div>
               <p className="mt-6 text-sm text-violet-200 text-center">
-                Built by Sara da Silva. Powered by AI. Hosted on buildwithsds.com.
+                Built by Sara da Silva. Powered by AI. Part of the buildwithsds.com initiative.
               </p>
             </motion.div>
           </div>
@@ -253,34 +210,20 @@ const LandingPage: React.FC = () => {
       <section className="w-full min-w-full bg-gradient-to-br from-violet-900 to-violet-800">
         <div className="py-24 w-full">
           <div className="w-full px-4 sm:px-6 md:px-12 lg:px-24 text-center">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
               className="w-full text-white"
             >
-              <h2 className="text-4xl font-bold mb-12 text-center">Why MindLink?</h2>
-              <ul className="space-y-6 text-lg text-center">
-                {[
-                  "Fast and easy to use",
-                  "No more 'what was that link again?'",
-                  "Looks great on desktop and mobile",
-                  "Built for students, creators, researchers, and busy humans",
-                  "100% yours — no data selling, ever"
-                ].map((item, index) => (
-                  <motion.li
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="flex items-center justify-center"
-                  >
-                    <Sparkles className="w-6 h-6 text-violet-300 mr-4" />
-                    {item}
-                  </motion.li>
-                ))}
+              <h2 className="text-4xl font-bold mb-12">Why MindLink?</h2>
+              <ul className="space-y-6 text-lg text-center sm:text-left max-w-2xl mx-auto">
+                <li>Designed for speed and simplicity—add, organize, and revisit links effortlessly</li>
+                <li>Never lose a link again—everything stays organized and searchable</li>
+                <li>Optimized for all screens—seamless experience on desktop and mobile</li>
+                <li>Built for students, creators, researchers, and anyone managing digital chaos</li>
+                <li>Your data stays private—no tracking, no selling, just your content</li>
               </ul>
             </motion.div>
           </div>
@@ -333,7 +276,7 @@ const LandingPage: React.FC = () => {
               viewport={{ once: true }}
               className="w-full"
             >
-              <h2 className="text-4xl font-bold mb-6 text-violet-900 text-center">Made with love by Sara da Silva</h2>
+              <h2 className="text-4xl font-bold mb-6 text-violet-900 text-center">Made by Sara da Silva</h2>
               <p className="text-xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto text-center">
                 I'm a Technical Support Engineer and aspiring Software Developer & AI Engineer from New Zealand. I created MindLink because I needed a smarter way to track my digital life — and I figured you might too.
               </p>
@@ -376,26 +319,6 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="w-full min-w-full bg-violet-900">
-        <div className="py-12 w-full">
-          <div className="w-full px-4 sm:px-6 md:px-12 lg:px-24 text-center">
-            <div className="flex flex-col md:flex-row justify-between items-center w-full">
-              <div className="mb-6 md:mb-0">
-                <h3 className="text-2xl font-bold text-white text-center">MindLink</h3>
-                <p className="text-violet-300 mt-2 text-center">© 2024 Sara da Silva. All rights reserved.</p>
-              </div>
-              <div className="flex space-x-6 justify-center">
-                <Link to="/" className="text-violet-300 hover:text-white transition-colors">Home</Link>
-                <Link to="/features" className="text-violet-300 hover:text-white transition-colors">Features</Link>
-                <Link to="/about" className="text-violet-300 hover:text-white transition-colors">About</Link>
-                <Link to="/contact" className="text-violet-300 hover:text-white transition-colors">Contact</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
