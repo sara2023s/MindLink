@@ -16,7 +16,7 @@ import DeleteConfirmation from '../components/DeleteConfirmation';
 
 export const AddLink: React.FC = () => {
   const navigate = useNavigate();
-  const { addLink } = useLinks();
+  const { addLink, links } = useLinks();
   const { currentUser } = useAuth();
   
   const [showMultiCatModal, setShowMultiCatModal] = useState(false);
@@ -147,42 +147,84 @@ export const AddLink: React.FC = () => {
       return;
     }
 
-    // Require manual description for Instagram or Facebook links
-    if ((isInstagram || isFacebook) && !description) {
-      setError(`At this stage we can't generate a description for this content. Please type a short description.`);
-      return;
+    // Warn if social link has no description and confirm continuation
+    if ((isInstagram || isFacebook) && !description.trim()) {
+      const proceed = window.confirm(
+        "Without a description, we can't generate tags and categories. Are you sure you want to continue?"
+      );
+      if (!proceed) {
+        return;
+      }
     }
 
     setIsLoading(true);
     setIsProcessing(true);
 
     try {
-      // Prepare link data using local variables to avoid stale state
+      // Gather existing tags and categories to reuse if matching
+      const originalCategoriesList = links.map(l => l.category);
+      const originalTagsList: string[] = links.flatMap(l => l.tags ?? []);
       let finalTitle = title;
       let finalCategory = category;
       let finalTags = [...tags];
-      if (isInstagram || isFacebook) {
-        try {
+      // Perform AI analysis: use description for social, URL for others
+      try {
+        let analysisKeywords: string[];
+        let analysisCategory: string;
+        let analysisTitle: string;
+        if (isInstagram || isFacebook) {
           const analysis = await AIService.getInstance().analyzeContent(description);
-          // Always override with analysis results for social links
-          finalTitle = analysis.summary;
-          finalCategory = analysis.topics[0] || '';
-          finalTags = analysis.keywords;
-        } catch (analysisError) {
-          console.error('Error analyzing description:', analysisError);
-          toast.error('Failed to generate tags and category from description.');
-        }
-      } else {
-        if (!title || !description || !category || tags.length === 0) {
+          analysisKeywords = analysis.keywords;
+          analysisCategory = analysis.topics[0] || '';
+          // Prefix title with 'This reel' or 'This post' for Instagram content
+          if (isInstagramReelOrPost) {
+            const type = instagramService.getContentType(url); // 'reel' or 'post'
+            analysisTitle = `This ${type} ${analysis.summary}`;
+          } else {
+            analysisTitle = analysis.summary;
+          }
+        } else {
           const aiContent = await generateLinkContent(url);
           setPreviewData(aiContent);
-          finalTitle = finalTitle || aiContent.title;
-          // description state remains user-entered or preview
-          finalCategory = finalCategory || aiContent.category;
-          finalTags = finalTags.length ? finalTags : aiContent.tags;
+          analysisKeywords = aiContent.tags;
+          analysisCategory = aiContent.category;
+          analysisTitle = aiContent.title;
         }
+        // Title: generate if empty
+        finalTitle = finalTitle || analysisTitle;
+        // Category: reuse existing match if any, otherwise analysis result
+        const existingCat = originalCategoriesList.find(c => c.toLowerCase() === analysisCategory.toLowerCase());
+        finalCategory = finalCategory || existingCat || analysisCategory;
+        // Tags: if any analysis tag matches existing, use those, else use all analysis tags
+        const matchedTags = originalTagsList.filter(t =>
+          analysisKeywords.some(kw => kw.toLowerCase() === t.toLowerCase())
+        );
+        finalTags = finalTags.length > 0
+          ? finalTags
+          : matchedTags.length > 0
+          ? matchedTags
+          : analysisKeywords;
+      } catch (analysisError) {
+        console.error('Error during AI analysis:', analysisError);
+        toast.error('Failed to generate tags and category.');
       }
 
+      // Enforce title is a single sentence derived from description or AI
+      if (finalTitle) {
+        const firstSentence = finalTitle.split(/[.?!]/)[0].trim();
+        finalTitle = firstSentence.endsWith('.') ? firstSentence : `${firstSentence}.`;
+      }
+      // Ensure Instagram links include 'instagram' (and 'reel' if reel/post)
+      if (isInstagram) {
+        finalTags = Array.from(new Set([...finalTags, 'instagram']));
+        if (isInstagramReelOrPost) {
+          finalTags = Array.from(new Set([...finalTags, 'reel']));
+        }
+      }
+      // Ensure Facebook links include 'facebook'
+      if (isFacebook) {
+        finalTags = Array.from(new Set([...finalTags, 'facebook']));
+      }
       const newLink: Omit<Link, 'id' | 'createdAt'> = {
         url,
         title: finalTitle || extractDomainFromUrl(url),

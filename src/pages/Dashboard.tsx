@@ -523,8 +523,15 @@ const Dashboard = () => {
         <div className="flex items-center gap-2 mb-4">
           <Tag className="w-5 h-5 text-indigo-600" />
           <h2 className="text-xl font-semibold text-gray-900">Categories & Tags</h2>
+          <button
+            onClick={() => navigate('/coming-soon')}
+            className="text-indigo-600 hover:text-indigo-700 flex items-center ml-auto"
+          >
+            View All
+            <ChevronRight className="w-4 h-4 ml-1" />
+          </button>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-nowrap gap-2 overflow-hidden">
           {categories.map((category) => (
             <motion.button
               key={category}
