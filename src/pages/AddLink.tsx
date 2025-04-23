@@ -7,7 +7,7 @@ import { Card } from '../components/ui/Card';
 import { useLinks } from '../hooks/useLinks';
 import { useAuth } from '../contexts/AuthContext';
 import { instagramService } from '../services/instagramService';
-import { generateLinkContent } from '../services/aiService';
+import { generateLinkContent, AIService } from '../services/aiService';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { extractDomainFromUrl } from '../utils/urlUtils';
@@ -32,6 +32,7 @@ export const AddLink: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isInstagram, setIsInstagram] = useState(false);
   const [isInstagramReelOrPost, setIsInstagramReelOrPost] = useState(false);
+  const [isFacebook, setIsFacebook] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [previewData, setPreviewData] = useState<{
     title: string;
@@ -45,6 +46,7 @@ export const AddLink: React.FC = () => {
     const checkInstagramUrl = async () => {
       if (url && instagramService.isInstagramUrl(url)) {
         setIsInstagram(true);
+        setPreviewData(null);
         const isReelOrPost = instagramService.isInstagramReelOrPost(url);
         setIsInstagramReelOrPost(isReelOrPost);
         
@@ -55,12 +57,10 @@ export const AddLink: React.FC = () => {
           setTags(instagramService.getTags());
           setDescription('');
         } else {
-          // For non-reel/post Instagram links, use regular metadata extraction
           setTitle('');
           setDescription('');
           setTags([]);
         }
-        
         setIsProcessing(false);
       } else {
         setIsInstagram(false);
@@ -74,10 +74,31 @@ export const AddLink: React.FC = () => {
     checkInstagramUrl();
   }, [url]);
 
+  // Detect Facebook URLs and prompt for description
+  useEffect(() => {
+    if (url && url.includes('facebook.com')) {
+      setIsFacebook(true);
+      setPreviewData(null);
+      // reset fields
+      setTitle('');
+      setDescription('');
+      setTags([]);
+      toast(`At this stage we can't generate a description for Facebook links. Please type a short description.`, { icon: 'ℹ️' });
+    } else {
+      setIsFacebook(false);
+    }
+  }, [url]);
+
   // Fetch metadata when URL changes
   useEffect(() => {
     const fetchMetadata = async () => {
-      if (url && isValidUrl(url) && !isInstagram) {
+      // Only fetch AI metadata for non-Instagram and non-Facebook URLs
+      if (
+        url &&
+        isValidUrl(url) &&
+        !url.includes('instagram.com') &&
+        !url.includes('facebook.com')
+      ) {
         setIsProcessing(true);
         try {
           const aiContent = await generateLinkContent(url);
@@ -126,8 +147,9 @@ export const AddLink: React.FC = () => {
       return;
     }
 
-    if (isInstagramReelOrPost && !description) {
-      setError('Please provide a description for this Instagram content');
+    // Require manual description for Instagram or Facebook links
+    if ((isInstagram || isFacebook) && !description) {
+      setError(`At this stage we can't generate a description for this content. Please type a short description.`);
       return;
     }
 
@@ -135,21 +157,38 @@ export const AddLink: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // If any fields are empty, try to generate them with AI
-      if (!title || !description || !category || tags.length === 0) {
-        const aiContent = await generateLinkContent(url);
-        if (!title) setTitle(aiContent.title);
-        if (!description) setDescription(aiContent.description);
-        if (!category) setCategory(aiContent.category);
-        if (tags.length === 0) setTags(aiContent.tags);
+      // Prepare link data using local variables to avoid stale state
+      let finalTitle = title;
+      let finalCategory = category;
+      let finalTags = [...tags];
+      if (isInstagram || isFacebook) {
+        try {
+          const analysis = await AIService.getInstance().analyzeContent(description);
+          // Always override with analysis results for social links
+          finalTitle = analysis.summary;
+          finalCategory = analysis.topics[0] || '';
+          finalTags = analysis.keywords;
+        } catch (analysisError) {
+          console.error('Error analyzing description:', analysisError);
+          toast.error('Failed to generate tags and category from description.');
+        }
+      } else {
+        if (!title || !description || !category || tags.length === 0) {
+          const aiContent = await generateLinkContent(url);
+          setPreviewData(aiContent);
+          finalTitle = finalTitle || aiContent.title;
+          // description state remains user-entered or preview
+          finalCategory = finalCategory || aiContent.category;
+          finalTags = finalTags.length ? finalTags : aiContent.tags;
+        }
       }
 
       const newLink: Omit<Link, 'id' | 'createdAt'> = {
         url,
-        title: title || previewData?.title || extractDomainFromUrl(url),
-        description: description || previewData?.description || '',
-        category: category || previewData?.category || '',
-        tags,
+        title: finalTitle || extractDomainFromUrl(url),
+        description: description,
+        category: finalCategory,
+        tags: finalTags,
         isPinned,
         isProcessed: false,
         userId: currentUser?.uid || '',
@@ -253,17 +292,21 @@ export const AddLink: React.FC = () => {
 
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description {isInstagramReelOrPost ? '*' : '(optional)'}
+                    Description {(isInstagramReelOrPost || isFacebook) ? '*' : '(optional)'}
                   </label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder={isInstagramReelOrPost 
-                      ? "This is an Instagram link. Please describe the content or why you saved it:"
-                      : "Leave blank for AI to generate a summary"}
+                    placeholder={
+                      isInstagramReelOrPost
+                        ? "This is an Instagram link. Please describe the content or why you saved it:"
+                        : isFacebook
+                        ? "At this stage we can't generate a description for Facebook links. Please type a short description."
+                        : "Leave blank for AI to generate a summary"
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition duration-200"
                     rows={4}
-                    required={isInstagramReelOrPost}
+                    required={isInstagramReelOrPost || isFacebook}
                   />
                 </div>
 

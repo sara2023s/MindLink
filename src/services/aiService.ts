@@ -280,7 +280,9 @@ export class AIService {
       ];
 
       const result = await this.callOpenRouter(messages);
-      return JSON.parse(result);
+      // Strip all control characters (Unicode category C) to avoid JSON.parse errors
+      const cleaned = result.replace(/\p{C}/gu, '');
+      return JSON.parse(cleaned) as ContentAnalysis;
     } catch (error) {
       console.error('Error analyzing content:', error);
       throw new Error('Failed to analyze content');
